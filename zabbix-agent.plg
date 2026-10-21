@@ -3,9 +3,9 @@
 <!ENTITY name      "zabbix-agent">
 <!ENTITY author    "VRX">
 <!ENTITY version   "@VERSION@">
-<!ENTITY zbxver    "7.0.31">
+<!ENTITY zbxver    "7.0.32">
 <!ENTITY tarball   "zabbix_agent-&zbxver;-linux-3.0-amd64-static.tar.gz">
-<!ENTITY sha256    "c22d06b3f4907bb3507ef881dca39dd01260768a459edf7b708db56b9f302c26">
+<!ENTITY sha256    "10f0b9ab28524ca0d2f9af27d58b701826d75ad8262601185415f918c02e9eec">
 <!ENTITY github    "vrx-666/unraid-zabbix-agent">
 <!ENTITY pluginURL "https://github.com/&github;/releases/latest/download/&name;.plg">
 <!ENTITY plgdir    "/boot/config/plugins/&name;">
