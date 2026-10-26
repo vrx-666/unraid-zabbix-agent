@@ -54,6 +54,10 @@ proc.get
 unraid.smart.health[../../etc/shadow]
 EOF
 
+# Fake smartctl that records its argument count: unraid.smart.health must hand the device over as ONE argument,
+# so a parameter like "sda -s off" cannot reach smartctl as extra options (CA review, PR #3).
+printf '#!/bin/sh\necho $# > /tmp/smartctl.argc\n' > "$W/smartctl"; chmod 755 "$W/smartctl"
+
 # Test settings instead of the generated ones (no PSK, so zabbix_get can connect).
 mkdir -p "$W/boot"
 printf 'Server=127.0.0.1\nHostname=test\n' > "$W/boot/zabbix_agentd.conf"
@@ -61,6 +65,7 @@ printf 'Server=127.0.0.1\nHostname=test\n' > "$W/boot/zabbix_agentd.conf"
 docker run --rm -v "$W:/w:ro" -v "$W/boot:/boot/config/plugins/zabbix-agent:ro" -v "$W/etc/zabbix:/etc/zabbix:ro" \
   debian:trixie-slim bash -c '
   set -e
+  cp /w/smartctl /usr/local/bin/smartctl
   /w/sbin/zabbix_agentd -T -c /etc/zabbix/zabbix_agentd.conf
   /w/sbin/zabbix_agentd -c /etc/zabbix/zabbix_agentd.conf
   sleep 2
@@ -79,5 +84,7 @@ docker run --rm -v "$W:/w:ro" -v "$W/boot:/boot/config/plugins/zabbix-agent:ro" 
   }
   check allowed < /tmp/allowed
   check denied < /w/denied
+  /w/bin/zabbix_get -s 127.0.0.1 -k "unraid.smart.health[sda -s off]" >/dev/null 2>&1 || true
+  [ "$(cat /tmp/smartctl.argc 2>/dev/null)" = 4 ] || { echo "FAIL: unraid.smart.health passes extra arguments to smartctl"; fail=1; }
   [ $fail = 0 ] && echo "PASS: $(wc -l < /tmp/allowed) allowed, $(wc -l < /w/denied) denied"
   exit $fail'
