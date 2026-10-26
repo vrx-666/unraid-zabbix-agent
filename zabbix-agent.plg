@@ -105,7 +105,7 @@ UserParameter=unraid.array.state,sed -n 's/^mdState="\(.*\)"$/\1/p' /var/local/e
 # All array and pool disks as JSON (status, temp, errors, spun down) -- read from emhttp, no disk is woken up.
 UserParameter=unraid.disks,php -r 'echo json_encode(parse_ini_file("/var/local/emhttp/disks.ini", true));'
 # SMART health of one device (e.g. sdb): PASSED, FAILED or STANDBY (not woken up).
-UserParameter=unraid.smart.health[*],smartctl -n standby -H /dev/$1 | sed -n 's/^SMART overall-health.*: //p; s/.*STANDBY mode.*/STANDBY/p'
+UserParameter=unraid.smart.health[*],smartctl -n standby -H "/dev/$1" | sed -n 's/^SMART overall-health.*: //p; s/.*STANDBY mode.*/STANDBY/p'
 ]]>
 </INLINE>
 </FILE>
