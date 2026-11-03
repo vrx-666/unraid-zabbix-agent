@@ -59,7 +59,7 @@ rules, so they win. Keys with `..` in a parameter stay denied whatever you allow
 |---|---|
 | `unraid.array.state` | Array state: `STARTED`, `STOPPED`, ... |
 | `unraid.disks` | All disks as JSON (status, temperature, errors, spun down), read from Unraid without waking disks |
-| `unraid.smart.health[sdX]` | SMART health: `PASSED`, `FAILED`, or `STANDBY` (a sleeping disk is not woken) |
+| `unraid.smart.health[sdX]` | SMART health: `PASSED` (ATA, NVMe) or `OK` (SAS) when healthy, `FAILED!` or a SAS reason when not, `STANDBY` for a sleeping disk (not woken) |
 
 The template [`zbx_unraid_by_zabbix_agent.yaml`](templates/zbx_unraid_by_zabbix_agent.yaml) (also attached to every
 release) uses them: array state, and for every array and pool disk its status, errors, temperature and SMART health,
