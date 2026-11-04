@@ -13,7 +13,7 @@ zabbix_export:
         Per-disk temperature threshold: override {$UNRAID.DISK.TEMP.MAX:"<disk name>"}, e.g. "disk1" or "cache".
       vendor:
         name: vrx-666
-        version: 7.0-0
+        version: 7.0-1
       groups:
         - name: Templates/Operating systems
       items:
