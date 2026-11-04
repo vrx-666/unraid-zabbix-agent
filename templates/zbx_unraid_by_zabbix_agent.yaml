@@ -139,11 +139,11 @@ zabbix_export:
               key: 'unraid.smart.health[{#DEVICE}]'
               delay: 1h
               value_type: CHAR
-              description: 'smartctl -H result. A spun-down disk is not woken up (STANDBY is discarded).'
+              description: 'smartctl -H result: PASSED (ATA, NVMe) or OK (SAS) when healthy, any other verdict raises the trigger. A spun-down disk is not woken up; STANDBY and an empty answer (a disk smartctl cannot read) are discarded.'
               preprocessing:
                 - type: NOT_MATCHES_REGEX
                   parameters:
-                    - '^STANDBY$'
+                    - '^(STANDBY)?$'
                   error_handler: DISCARD_VALUE
               tags:
                 - tag: component
@@ -152,8 +152,8 @@ zabbix_export:
                   value: '{#NAME}'
               trigger_prototypes:
                 - uuid: f3d48cf90e424cc891c28f844193fb3f
-                  expression: 'last(/Unraid by Zabbix agent/unraid.smart.health[{#DEVICE}])="FAILED"'
-                  name: 'Disk {#NAME}: SMART health check FAILED'
+                  expression: 'last(/Unraid by Zabbix agent/unraid.smart.health[{#DEVICE}])<>"PASSED" and last(/Unraid by Zabbix agent/unraid.smart.health[{#DEVICE}])<>"OK"'
+                  name: 'Disk {#NAME}: SMART health is {ITEM.LASTVALUE1}'
                   priority: HIGH
                   manual_close: 'YES'
           master_item:

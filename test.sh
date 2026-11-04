@@ -55,8 +55,33 @@ unraid.smart.health[../../etc/shadow]
 EOF
 
 # Fake smartctl that records its argument count: unraid.smart.health must hand the device over as ONE argument,
-# so a parameter like "sda -s off" cannot reach smartctl as extra options (CA review, PR #3).
-printf '#!/bin/sh\necho $# > /tmp/smartctl.argc\n' > "$W/smartctl"; chmod 755 "$W/smartctl"
+# so a parameter like "sda -s off" cannot reach smartctl as extra options (CA review, PR #3). It answers -H by
+# device with the lines of smartmontools 7.5: ATA/NVMe (ataprint.cpp, nvmeprint.cpp), SAS (scsiprint.cpp) and
+# the "-n standby" skip, whose power mode name differs by disk type (SLEEP, STANDBY_Y, STANDBY BY TIMER, ...).
+cat > "$W/smartctl" <<'EOF'
+#!/bin/sh
+echo $# > /tmp/smartctl.argc
+case "$4" in   # smartctl -n standby -H /dev/sdX
+  /dev/sda) echo "SMART overall-health self-assessment test result: PASSED" ;;
+  /dev/sdb) echo "SMART overall-health self-assessment test result: FAILED!" ;;
+  /dev/sdc) echo "SMART Health Status: OK" ;;
+  /dev/sdd) echo "SMART Health Status: Failure prediction threshold exceeded [asc=5d, ascq=0]" ;;
+  /dev/sde) echo "Device is in STANDBY mode, exit(2)" ;;
+  /dev/sdf) echo "Device is in SLEEP mode, exit(2)" ;;
+  /dev/sdg) echo "Device is in STANDBY BY TIMER mode, exit(2)" ;;
+esac
+EOF
+chmod 755 "$W/smartctl"
+# What unraid.smart.health must return for each: the verdict itself, STANDBY for every line of a sleeping disk.
+cat > "$W/smart" <<'EOF'
+sda PASSED
+sdb FAILED!
+sdc OK
+sdd Failure prediction threshold exceeded [asc=5d, ascq=0]
+sde STANDBY
+sdf STANDBY
+sdg STANDBY
+EOF
 
 # Test settings instead of the generated ones (no PSK, so zabbix_get can connect).
 mkdir -p "$W/boot"
@@ -86,5 +111,9 @@ docker run --rm -v "$W:/w:ro" -v "$W/boot:/boot/config/plugins/zabbix-agent:ro" 
   check denied < /w/denied
   /w/bin/zabbix_get -s 127.0.0.1 -k "unraid.smart.health[sda -s off]" >/dev/null 2>&1 || true
   [ "$(cat /tmp/smartctl.argc 2>/dev/null)" = 4 ] || { echo "FAIL: unraid.smart.health passes extra arguments to smartctl"; fail=1; }
-  [ $fail = 0 ] && echo "PASS: $(wc -l < /tmp/allowed) allowed, $(wc -l < /w/denied) denied"
+  while read -r dev want; do
+    r=$(/w/bin/zabbix_get -s 127.0.0.1 -k "unraid.smart.health[$dev]" 2>&1 || true)
+    [ "$r" = "$want" ] || { echo "FAIL: unraid.smart.health[$dev] returned \"$r\", expected \"$want\""; fail=1; }
+  done < /w/smart
+  [ $fail = 0 ] && echo "PASS: $(wc -l < /tmp/allowed) allowed, $(wc -l < /w/denied) denied, $(wc -l < /w/smart) smartctl answers"
   exit $fail'
