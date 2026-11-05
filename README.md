@@ -7,6 +7,12 @@ or bind mounts.
 The plugin downloads the agent from `cdn.zabbix.com` and checks its SHA256; nothing is rebuilt.
 Agent 7.0 works with Zabbix server 7.0 and newer.
 
+**Zabbix server 8.0:** the agent connects and most data comes in, but the 8.0 "Linux by Zabbix agent" template
+reads network interfaces, disks and filesystems with keys added in agent 8.0 (`net.if.get`, `vfs.dev.get`,
+`vfs.fs.get[short]`), so those items stay unsupported with agent 7.0. Do not import the 7.0 template to work
+around it: it has the same UUID and replaces the built-in 8.0 template for every host. An agent 8.0 option is
+planned; if you need it, say so in the [forum thread](https://forums.unraid.net/topic/200922-plugin-zabbix-agent/).
+
 Support: [Unraid forum thread](https://forums.unraid.net/topic/200922-plugin-zabbix-agent/)
 
 ## Install
